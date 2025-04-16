@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>myco Live Podcast Player</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>tailwind.config = { theme: { extend: { colors: { primary: '#00E676', secondary: '#1A1E2E' }, borderRadius: { 'none': '0px', 'sm': '4px', DEFAULT: '8px', 'md': '12px', 'lg': '16px', 'xl': '20px', '2xl': '24px', '3xl': '32px', 'full': '9999px', 'button': '8px' } } } }</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :where([class^="ri-"])::before {
+            content: "\f3c2";
+        }
+
+        body {
+            background-color: #1A1E2E;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input[type="radio"] {
+            appearance: none;
+            width: 19px;
+            height: 19px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+        }
+
+        input[type="radio"]:checked {
+            border-color: #00E676;
+        }
+
+        input[type="radio"]:checked::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #00E676;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .quiz-notification {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .timer-bar {
+            transition: width 1s linear;
+        }
+
+        .quiz-option {
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .quiz-option.selected {
+            background-color: rgba(76, 217, 100, 0.2);
+            border-color: #4CD964;
+        }
+
+        .quiz-option.correct {
+            background-color: rgba(76, 217, 100, 0.2);
+            border-color: #4CD964;
+        }
+
+        .quiz-option.incorrect {
+            background-color: rgba(255, 59, 48, 0.2);
+            border-color: #FF3B30;
+        }
+
+        .quiz-widget {
+            transition: all 0.3s ease;
+        }
+
+        .quiz-widget.collapsed {
+            width: 60px;
+            height: 60px;
+            overflow: hidden;
+        }
+
+        .quiz-widget.expanded {
+            width: 320px;
+            height: auto;
+            max-height: 80%;
+        }
+
+        .mute-button,
+        .fullscreen-button,
+        .settings-button,
+        .cast-button,
+        .play-button {
+            transition: all 0.2s ease;
+        }
+
+        .mute-button:hover,
+        .fullscreen-button:hover,
+        .settings-button:hover,
+        .cast-button:hover,
+        .play-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-bar {
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #4CD964;
+            width: 15%;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4CD964;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+
+        .myco-logo-1 {
+            width: 5rem;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-secondary py-2 px-4 flex items-center justify-between">
+            <div class="flex items-center">
+                <button class="w-10 h-10 flex items-center justify-center text-white mr-4">
+                    <i class="ri-menu-line ri-lg"></i>
+                </button>
+                <div class="font-['Pacifico'] text-2xl myco-logo-1"><img src="./images/logo-white.png" alt=""></div>
+            </div>
+            <div class="flex-1 max-w-md mx-4">
+                <div class="relative">
+                    <input type="text" placeholder="Search"
+                        class="w-full bg-[#2A2E3E] text-white px-4 py-2 rounded-md border-none focus:outline-none focus:ring-1 focus:ring-primary">
+                    <button
+                        class="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center">
+                        <i class="ri-search-line ri-lg"></i>
+                    </button>
+                </div>
+            </div>
+            <button class="bg-primary text-white px-4 py-2 rounded-button flex items-center whitespace-nowrap">
+                <i class="ri-user-line mr-2"></i>
+                Sign In
+            </button>
+        </header>
+        <!-- Main Content -->
+        <main class="flex-1 flex">
+            <!-- Question Navigator Sidebar -->
+            <aside class="w-64 bg-secondary border-r border-white/10 p-4 overflow-y-auto">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-semibold">Questions</h2>
+                    <button class="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-full">
+                        <i class="ri-add-line ri-lg"></i>
+                    </button>
+                </div>
+                <div class="space-y-2">
+                    <div class="bg-white/10 p-3 rounded-md cursor-pointer">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-primary">Question 1</span>
+                            <span class="text-xs text-white/60">Multiple Choice</span>
+                        </div>
+                        <p class="text-sm line-clamp-2">What is the primary ingredient in traditional hummus?</p>
+                    </div>
+                    <div class="p-3 rounded-md cursor-pointer hover:bg-white/5">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-white/60">Question 2</span>
+                            <span class="text-xs text-white/60">Multiple Choice</span>
+                        </div>
+                        <p class="text-sm text-white/60 line-clamp-2">Which cooking method is best for retaining
+                            nutrients?</p>
+                    </div>
+                    <div class="p-3 rounded-md cursor-pointer hover:bg-white/5">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-white/60">Question 3</span>
+                            <span class="text-xs text-white/60">Multiple Choice</span>
+                        </div>
+                        <p class="text-sm text-white/60 line-clamp-2">What temperature is considered safe for cooked
+                            chicken?</p>
+                    </div>
+                </div>
+            </aside>
+            <!-- Main Content Area -->
+            <div class="flex-1 flex">
+                <!-- Question Editor -->
+                <div class="w-1/2 p-6 border-r border-white/10">
+                    <div class="mb-8">
+                        <label class="block text-sm text-white/60 mb-2">Quiz Title</label>
+                        <input type="text" maxlength="60" placeholder="Enter quiz title"
+                            class="w-full bg-[#2A2E3E] text-white px-4 py-3 rounded-md border-none focus:outline-none focus:ring-1 focus:ring-primary"
+                            value="Cooking Basics Quiz">
+                        <div class="flex justify-end mt-1">
+                            <span class="text-xs text-white/60">32/60</span>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm text-white/60 mb-2">Question</label>
+                        <div class="bg-[#2A2E3E] rounded-md overflow-hidden">
+                            <div class="flex items-center px-3 py-2 border-b border-white/10">
+                                <button
+                                    class="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-md mr-1">
+                                    <i class="ri-bold"></i>
+                                </button>
+                                <button
+                                    class="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-md mr-1">
+                                    <i class="ri-italic"></i>
+                                </button>
+                                <button class="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-md">
+                                    <i class="ri-link"></i>
+                                </button>
+                            </div>
+                            <textarea class="w-full bg-transparent text-white px-4 py-3 border-none focus:outline-none"
+                                rows="4"
+                                placeholder="Enter your question">What is the primary ingredient in traditional hummus?</textarea>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label class="block text-sm text-white/60 mb-2">Question Timer (seconds)</label>
+                                <input type="number" min="5" max="60"
+                                    class="w-full bg-[#2A2E3E] text-white px-4 py-3 rounded-md border-none focus:outline-none focus:ring-1 focus:ring-primary"
+                                    value="30">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-white/60 mb-2">Show at Timestamp</label>
+                                <div class="relative">
+                                    <input type="text" placeholder="mm:ss"
+                                        class="w-full bg-[#2A2E3E] text-white px-4 py-3 rounded-md border-none focus:outline-none focus:ring-1 focus:ring-primary"
+                                        pattern="[0-9]{2}:[0-9]{2}" value="01:30">
+                                    <button
+                                        class="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center text-white/60 hover:text-white">
+                                        <i class="ri-time-line ri-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <label class="block text-sm text-white/60 mb-4">Answer Options</label>
+                        <div class="space-y-4">
+                            <div class="flex items-center">
+                                <input type="radio" name="correct" class="mr-4" checked>
+                                <input type="text"
+                                    class="flex-1 bg-[#2A2E3E] text-white px-4 py-3 rounded-md border-none focus:outline-none focus:ring-1 focus:ring-primary"
+                                    value="Chickpeas">
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" name="correct" class="mr-4">
+                                <input type="text"
+                                    class="flex-1 bg-[#2A2E3E] text-white px-4 py-3 rounded-md border-none focus:outline-none focus:ring-1 focus:ring-primary"
+                                    value="Black beans">
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" name="correct" class="mr-4">
+                                <input type="text"
+                                    class="flex-1 bg-[#2A2E3E] text-white px-4 py-3 rounded-md border-none focus:outline-none focus:ring-1 focus:ring-primary"
+                                    value="Lentils">
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" name="correct" class="mr-4">
+                                <input type="text"
+                                    class="flex-1 bg-[#2A2E3E] text-white px-4 py-3 rounded-md border-none focus:outline-none focus:ring-1 focus:ring-primary"
+                                    value="Soybeans">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-8">
+                        <button
+                            class="px-6 py-2 rounded-button border border-white/20 text-white hover:bg-white/5 flex items-center whitespace-nowrap">
+                            <i class="ri-delete-bin-line mr-2"></i>
+                            Delete Question
+                        </button>
+                        <div class="flex items-center space-x-3">
+                            <button
+                                class="px-6 py-2 rounded-button border border-white/20 text-white hover:bg-white/5 whitespace-nowrap">Save
+                                Draft</button>
+                            <button
+                                class="px-6 py-2 rounded-button bg-primary text-white hover:bg-primary/90 whitespace-nowrap">Publish
+                                Question</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Live Preview -->
+                <div class="w-1/2 p-6">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold mb-2">Live Preview</h2>
+                        <p class="text-sm text-white/60">See how your quiz will appear to participants</p>
+                    </div>
+                    <!-- Video Title Bar -->
+                    <div class="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/70 to-transparent z-10">
+                        <h1 class="text-xl font-medium">Dove Real Beauty Starts with Motherhood | Zara Madani</h1>
+                    </div>
+                    <!-- Video Content -->
+                    <div class="relative w-full" style="padding-top: 56.25%;">
+                        <img src="https://readdy.ai/api/search-image?query=A%20woman%20with%20long%20dark%20hair%20wearing%20a%20white%20shirt%20sitting%20in%20a%20well-lit%20room%20with%20plants%20and%20photo%20frames%20in%20the%20background%2C%20talking%20during%20an%20interview%2C%20warm%20lighting%2C%20professional%20setting%2C%20clean%20background&width=1280&height=720&seq=12345&orientation=landscape"
+                            alt="Video Content" class="absolute top-0 left-0 w-full h-full object-cover">
+                        <!-- myco Logo Overlay -->
+                        <div class="absolute top-4 right-4">
+                            <div class="font-['Pacifico'] text-2xl"><span class="text-primary">my</span><span
+                                    class="text-white">co</span></div>
+                        </div>
+                        <!-- Quiz Widget (Expanded State) -->
+                        <div
+                            class="quiz-widget expanded absolute right-4 top-1/2 transform -translate-y-1/2 bg-secondary/90 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden z-20">
+                            <div class="p-4">
+                                <div class="flex justify-between items-center mb-4">
+                                    <div class="flex items-center">
+                                        <div
+                                            class="w-8 h-8 flex items-center justify-center bg-primary rounded-full mr-2">
+                                            <i class="ri-question-line ri-lg"></i>
+                                        </div>
+                                        <span class="font-medium">Quiz Time!</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span
+                                            class="text-sm bg-primary/20 text-primary px-2 py-1 rounded-full">2/5</span>
+                                        <button class="w-8 h-8 flex items-center justify-center ml-2">
+                                            <i class="ri-close-line ri-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <h3 class="text-lg font-medium mb-2">What is the primary ingredient in traditional
+                                        hummus?</h3>
+                                    <div class="space-y-3 mb-4">
+                                        <button
+                                            class="quiz-option w-full text-left p-3 border border-white/20 rounded-md flex items-center">
+                                            <span
+                                                class="w-6 h-6 flex items-center justify-center bg-white/10 rounded-full mr-3">A</span>
+                                            <span>Black beans</span>
+                                        </button>
+                                        <button
+                                            class="quiz-option selected w-full text-left p-3 border rounded-md flex items-center">
+                                            <span
+                                                class="w-6 h-6 flex items-center justify-center bg-primary rounded-full mr-3">B</span>
+                                            <span>Chickpeas</span>
+                                        </button>
+                                        <button
+                                            class="quiz-option w-full text-left p-3 border border-white/20 rounded-md flex items-center">
+                                            <span
+                                                class="w-6 h-6 flex items-center justify-center bg-white/10 rounded-full mr-3">C</span>
+                                            <span>Lentils</span>
+                                        </button>
+                                        <button
+                                            class="quiz-option w-full text-left p-3 border border-white/20 rounded-md flex items-center">
+                                            <span
+                                                class="w-6 h-6 flex items-center justify-center bg-white/10 rounded-full mr-3">D</span>
+                                            <span>Soybeans</span>
+                                        </button>
+                                    </div>
+                                    <div class="relative h-2 bg-white/20 rounded-full overflow-hidden">
+                                        <div class="timer-bar absolute left-0 top-0 h-full bg-primary"
+                                            style="width: 45%"></div>
+                                    </div>
+                                    <div class="flex justify-between text-xs mt-1">
+                                        <span>9 seconds left</span>
+                                        <span>Score: 100</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Quiz Notification (Minimized State) - Hidden when expanded -->
+                        <div
+                            class="hidden quiz-notification absolute right-4 bottom-20 w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-lg cursor-pointer">
+                            <i class="ri-question-line ri-lg"></i>
+                            <div
+                                class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold">
+                                30s</div>
+                        </div>
+                        <!-- Video Controls -->
+                        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                            <div class="progress-bar rounded-full mb-2">
+                                <div class="progress-fill"></div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <button class="play-button w-10 h-10 flex items-center justify-center rounded-full">
+                                        <i class="ri-play-fill ri-lg"></i>
+                                    </button>
+                                    <button class="mute-button w-10 h-10 flex items-center justify-center">
+                                        <i class="ri-volume-up-line ri-lg"></i>
+                                    </button>
+                                    <span class="text-sm mx-2">00:00 / 21:13</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <button class="settings-button w-10 h-10 flex items-center justify-center">
+                                        <i class="ri-settings-3-line ri-lg"></i>
+                                    </button>
+                                    <button class="cast-button w-10 h-10 flex items-center justify-center">
+                                        <i class="ri-cast-line ri-lg"></i>
+                                    </button>
+                                    <button class="fullscreen-button w-10 h-10 flex items-center justify-center">
+                                        <i class="ri-fullscreen-line ri-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </main>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Timer input validation
+            const timerInput = document.querySelector('input[type="number"]');
+            if (timerInput) {
+                timerInput.addEventListener('input', function () {
+                    let value = parseInt(this.value);
+                    if (value < 5) this.value = 5;
+                    if (value > 60) this.value = 60;
+                });
+            }
+            // Timestamp input formatting
+            const timestampInput = document.querySelector('input[pattern]');
+            if (timestampInput) {
+                timestampInput.addEventListener('input', function (e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length > 4) value = value.slice(0, 4);
+                    if (value.length > 2) {
+                        const minutes = value.slice(0, 2);
+                        const seconds = value.slice(2);
+                        if (parseInt(seconds) >= 60) value = minutes + '59';
+                        value = minutes + ':' + seconds;
+                    }
+                    e.target.value = value;
+                });
+            }
+            // Character counter for quiz title
+            const quizTitleInput = document.querySelector('input[maxlength="60"]');
+            const charCounter = document.querySelector('.text-xs.text-white\\/60');
+            if (quizTitleInput && charCounter) {
+                quizTitleInput.addEventListener('input', function () {
+                    charCounter.textContent = `${this.value.length}/60`;
+                });
+            }
+            // Question navigator toggle
+            const questions = document.querySelectorAll('.cursor-pointer');
+            questions.forEach(question => {
+                question.addEventListener('click', function () {
+                    questions.forEach(q => q.classList.remove('bg-white/10'));
+                    questions.forEach(q => q.querySelector('.text-sm').classList.remove('text-primary'));
+                    questions.forEach(q => q.querySelector('.text-sm').classList.add('text-white/60'));
+                    this.classList.add('bg-white/10');
+                    this.querySelector('.text-sm').classList.remove('text-white/60');
+                    this.querySelector('.text-sm').classList.add('text-primary');
+                });
+            });
+            // Quiz widget toggle
+            const quizNotification = document.querySelector('.quiz-notification');
+            const quizWidget = document.querySelector('.quiz-widget');
+            const closeButton = quizWidget.querySelector('button:has(.ri-close-line)');
+            if (quizNotification) {
+                quizNotification.addEventListener('click', function () {
+                    quizNotification.classList.add('hidden');
+                    quizWidget.classList.remove('collapsed');
+                    quizWidget.classList.add('expanded');
+                });
+            }
+            if (closeButton) {
+                closeButton.addEventListener('click', function () {
+                    quizWidget.classList.remove('expanded');
+                    quizWidget.classList.add('collapsed');
+                    quizNotification.classList.remove('hidden');
+                });
+            }
+            // Quiz option selection
+            const quizOptions = document.querySelectorAll('.quiz-option');
+            quizOptions.forEach(option => {
+                option.addEventListener('click', function () {
+                    // First remove selected class from all options
+                    quizOptions.forEach(opt => opt.classList.remove('selected'));
+                    // Then add to clicked option
+                    this.classList.add('selected');
+                });
+            });
+            // Timer simulation
+            let timerWidth = 45;
+            const timerBar = document.querySelector('.timer-bar');
+            const timerText = document.querySelector('.quiz-widget .text-xs');
+            if (timerBar) {
+                const timerInterval = setInterval(() => {
+                    timerWidth -= 1;
+                    if (timerWidth <= 0) {
+                        clearInterval(timerInterval);
+                        timerWidth = 0;
+                        // Show correct answer
+                        quizOptions.forEach(option => {
+                            const optionText = option.querySelector('span:last-child').textContent;
+                            if (optionText === 'Chickpeas') {
+                                option.classList.add('correct');
+                            } else if (option.classList.contains('selected')) {
+                                option.classList.add('incorrect');
+                            }
+                        });
+                    }
+                    timerBar.style.width = `${timerWidth}%`;
+                    // Update timer text
+                    const secondsLeft = Math.floor(timerWidth / 5);
+                    if (timerText) {
+                        timerText.textContent = `${secondsLeft} seconds left`;
+                    }
+                    // Change color as time decreases
+                    if (timerWidth < 20) {
+                        timerBar.style.backgroundColor = '#FF3B30';
+                    } else if (timerWidth < 40) {
+                        timerBar.style.backgroundColor = '#FFCC00';
+                    }
+                }, 200);
+            }
+            // Video player controls simulation
+            const playButton = document.querySelector('.play-button');
+            const muteButton = document.querySelector('.mute-button');
+            const fullscreenButton = document.querySelector('.fullscreen-button');
+            if (playButton) {
+                playButton.addEventListener('click', function () {
+                    const icon = this.querySelector('i');
+                    if (icon.classList.contains('ri-play-fill')) {
+                        icon.classList.remove('ri-play-fill');
+                        icon.classList.add('ri-pause-fill');
+                    } else {
+                        icon.classList.remove('ri-pause-fill');
+                        icon.classList.add('ri-play-fill');
+                    }
+                });
+            }
+            if (muteButton) {
+                muteButton.addEventListener('click', function () {
+                    const icon = this.querySelector('i');
+                    if (icon.classList.contains('ri-volume-up-line')) {
+                        icon.classList.remove('ri-volume-up-line');
+                        icon.classList.add('ri-volume-mute-line');
+                    } else {
+                        icon.classList.remove('ri-volume-mute-line');
+                        icon.classList.add('ri-volume-up-line');
+                    }
+                });
+            }
+            if (fullscreenButton) {
+                fullscreenButton.addEventListener('click', function () {
+                    const icon = this.querySelector('i');
+                    if (icon.classList.contains('ri-fullscreen-line')) {
+                        icon.classList.remove('ri-fullscreen-line');
+                        icon.classList.add('ri-fullscreen-exit-line');
+                    } else {
+                        icon.classList.remove('ri-fullscreen-exit-line');
+                        icon.classList.add('ri-fullscreen-line');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
